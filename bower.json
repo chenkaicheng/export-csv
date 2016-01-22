@@ -1,5 +1,5 @@
 {
-  "name": "Highcharts export-csv plugin",
+  "name": "highcharts-export-csv",
   "main": "export-csv.js",
   "license": "MIT",
   "ignore": [
