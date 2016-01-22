@@ -4,6 +4,22 @@
   "license": "MIT",
   "ignore": [
     "**/.*",
-    "README.md"
+    "README.md",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "homepage": "https://github.com/hcharts/export-csv",
+  "authors": [
+    "zhy1stgg <823402333@qq.com>"
+  ],
+  "description": "Highcharts export-csv plugin",
+  "moduleType": [],
+  "keywords": [
+    "Highcharts",
+    "csv",
+    "xls",
+    "excel"
   ]
 }

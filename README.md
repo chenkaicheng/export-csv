@@ -12,9 +12,13 @@
 ### 在线实例
 
 
+
+
 ### 测试结果
 
-测试代码见：
+![测试结果](test.png)
+
+测试代码见：https://github.com/hcharts/export-csv/blob/master/export-excel-with-Chinese-charset.html
 
 ### 联系方式
 
