@@ -32,7 +32,7 @@
             downloadXLS: '下载 XLS&nbsp;&nbsp; 文件'
         },
         exporting: {
-            // reset the default export server, to fixed Chinese filename 
+            // reset the default export server, to fixed Chinese filename
             url: 'http://export.hcharts.cn/index.php',
             buttons: {
                 contextButton: {
@@ -281,6 +281,7 @@
         getContent(
             this,
             // add \ufeff to Fixed Chinese in csv file
+            // http://www.honger05.com/html5/2015-04-01-html5-download/
             'data:text/csv,\ufeff' + csv.replace(/\n/g, '%0A'),
             'csv',
             csv,
