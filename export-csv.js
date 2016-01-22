@@ -21,9 +21,24 @@
         downloadAttrSupported = document.createElement('a').download !== undefined;
 
     Highcharts.setOptions({
+        // fixed Chinese lang options
         lang: {
-            downloadCSV: 'Download CSV',
-            downloadXLS: 'Download XLS'
+            printChart: '打印图表',
+            downloadJPEG: '下载 JPEG 文件',
+            downloadPDF: '下载 PDF&nbsp;&nbsp; 文件',
+            downloadPNG: '下载 PNG&nbsp; 文件',
+            downloadSVG: '下载 SVG&nbsp; 文件',
+            downloadCSV: '下载 CSV&nbsp; 文件',
+            downloadXLS: '下载 XLS&nbsp;&nbsp; 文件'
+        },
+        exporting: {
+            // reset the default export server, to fixed Chinese filename 
+            url: 'http://export.hcharts.cn/index.php',
+            buttons: {
+                contextButton: {
+
+                }
+            }
         }
     });
 
@@ -112,7 +127,7 @@
 
         // Add header row
         if (!xTitle) {
-            xTitle = xAxis.isDatetimeAxis ? 'DateTime' : 'Category';
+            xTitle = xAxis.isDatetimeAxis ? '时间' : '分类';
         }
         dataRows = [[xTitle].concat(names)];
 
@@ -173,6 +188,7 @@
                 csv += lineDelimiter;
             }
         });
+
         return csv;
     };
 
@@ -213,11 +229,15 @@
     };
 
     function getContent(chart, href, extension, content, MIME) {
+        console.log(href);
+        console.log(content);
+        console.log(MIME);
         var a,
             blobObject,
             name,
             options = (chart.options.exporting || {}).csv || {},
-            url = options.url || 'http://www.highcharts.com/studies/csv-export/download.php';
+            // change export csv server url to fixed Chinese char
+            url = options.url || 'http://export.hcharts.cn/csv.php';
 
         if (chart.options.exporting.filename) {
             name = chart.options.exporting.filename;
@@ -260,7 +280,8 @@
         var csv = this.getCSV(true);
         getContent(
             this,
-            'data:text/csv,' + csv.replace(/\n/g, '%0A'),
+            // add \ufeff to Fixed Chinese in csv file
+            'data:text/csv,\ufeff' + csv.replace(/\n/g, '%0A'),
             'csv',
             csv,
             'text/csv'
@@ -273,6 +294,8 @@
     Highcharts.Chart.prototype.downloadXLS = function () {
         var uri = 'data:application/vnd.ms-excel;base64,',
             template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">' +
+                // add charset meta to fixed Chinese char in XLS file
+                '<meta http-equiv="Content-Type" charset=utf-8">'+
                 '<head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>' +
                 '<x:Name>Ark1</x:Name>' +
                 '<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->' +
@@ -281,7 +304,7 @@
                 '</head><body>' +
                 this.getTable(true) +
                 '</body></html>',
-            base64 = function (s) { 
+            base64 = function (s) {
                 return window.btoa(unescape(encodeURIComponent(s))); // #50
             };
         getContent(

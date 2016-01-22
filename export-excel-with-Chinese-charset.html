@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style type="text/css">
+        .container  {
+          width: 1000px;
+          margin: 0 auto;
+        }
+        .demo {
+            width: 1000px;
+            border: 1px solid #aaa;
+            margin: 20px 0;
+        }
+
+        .chart {
+            width: 70%;
+            float: left;
+        }
+
+        .data-preview {
+            width: 25%;
+            float: right;
+            padding-top: 40px;
+
+        }
+
+        .clear {
+            clear: both;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+    <h1>Highcharts 导出 Excel 插件 —— 修复中文乱码问题</h1>
+    <p>
+      export-csv 插件是将 Highcharts 图表数据导出为 Excel 文件（包含 CSV 及 XLS 文件），
+      官方提供的插件对中文支持不好，导出内容包含中文的话会产生乱码，这里是修复版本。
+    </p>
+    <h3>Github 地址：<a href="https://github.com/hcharts/export-csv">https://github.com/hcharts/export-csv</a></h3>
+    <h3>社区交流：<a href="http://bbs.hcharts.cn/thread-1174-1-1.html">http://bbs.hcharts.cn/thread-1174-1-1.html</a></a></h3>
+    <p>
+      下面是测试例子，主要修复如下问题：
+    </p>
+    <ul>
+      <li>下载 CSV 文件包含中文乱码</li>
+      <li>下载 XLC 文件包含中文乱码</li>
+      <li>下载的文件名为中文时乱码</li>
+    </ul>
+    <div class="demo">
+        <div id="container" class="chart"></div>
+        <div class="data-preview">
+            <h3>CSV 数据预览：</h3>
+            <pre id="container-preview"></pre>
+        </div>
+        <div class="clear"></div>
+    </div>
+
+    <div class="demo">
+        <div id="container2" class="chart"></div>
+        <div class="data-preview">
+            <h3>CSV 数据预览：</h3>
+            <pre id="container-preview2"></pre>
+        </div>
+        <div class="clear"></div>
+    </div>
+    </div>
+    <script src="http://cdn.hcharts.cn/jquery/jquery-1.8.3.min.js"></script>
+    <script src="http://cdn.hcharts.cn/highcharts/highcharts.js"></script>
+    <script src="http://cdn.hcharts.cn/highcharts/modules/exporting.js"></script>
+    <script src="export-csv.js"></script>
+    <script>
+    Highcharts.setOptions({
+        lang: {
+            printChart: '打印图表',
+            downloadJPEG: '下载 JPEG 文件',
+            downloadPDF: '下载 PDF&nbsp;&nbsp; 文件',
+            downloadPNG: '下载 PNG&nbsp; 文件',
+            downloadSVG: '下载 SVG&nbsp; 文件',
+            downloadCSV: '下载 CSV&nbsp; 文件',
+            downloadXLS: '下载 XLS&nbsp;&nbsp; 文件'
+        },
+        navigation: {
+            menuItemStyle: {
+                padding: '6px 14px'
+            }
+        },
+        credits: {
+          text: 'Highcharts中文网',
+          url: 'http://www.hcharts.cn'
+        }
+
+    });
+    var chart = new Highcharts.Chart({
+
+        chart: {
+            renderTo: 'container'
+        },
+        exporting: {
+            filename: '数据'
+        },
+        title: {
+            text: '导出 Excel 中文编码测试 1 - 分类数据'
+        },
+        subtitle: {
+            text: 'CSV 和 XLS 文件默认都是用 EXCEL 打开的，其中 CSV 是文本文件，XLS 是 EXCEL 文件'
+        },
+
+        xAxis: {
+            categories: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
+        },
+
+        series: [{
+            name: '测试数据',
+            data: [29.9, 71.5, 106.4, 129.2, 144.0, 176.0, 135.6, 148.5, 216.4, 194.1, 95.6, 54.4]
+        }]
+    }, function(c) {
+        $('#container-preview').html(c.getCSV());
+    });
+
+
+    $('#container2').highcharts({
+
+        exporting: {
+            filename: '数据'
+        },
+        title: {
+            text: '导出 Excel 中文编码测试 2 - 时间数据'
+        },
+        subtitle: {
+            text: 'CSV 和 XLS 文件默认都是用 EXCEL 打开的，其中 CSV 是文本文件，XLS 是 EXCEL 文件'
+        },
+
+        xAxis: {
+            type: 'datetime',
+            dateTimeLabelFormats: {
+                day: '%m-%d'
+            }
+        },
+        tooltip: {
+            dateTimeLabelFormats: {
+                day: '%Y-%m-%d'
+            }
+        }  ,
+
+        series: [{
+            name: '测试数据',
+            pointStart: new Date('2015-01-01').getTime(),
+            pointInterval: 24 * 60 * 60 * 1000,
+            data: [29.9, 71.5, 106.4, 129.2, 144.0, 176.0, 135.6, 148.5, 216.4, 194.1, 95.6, 54.4]
+        }]
+    }, function(c) {
+        $('#container-preview2').html(c.getCSV());
+    });
+
+    </script>
+</body>
+
+</html>
