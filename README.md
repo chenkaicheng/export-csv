@@ -11,7 +11,8 @@
 
 ### 在线实例
 
-
+* http://code.hcharts.cn/hcharts.cn/hhhGcw
+* http://code.hcharts.cn/hcharts.cn/hhhGcx
 
 
 ### 测试结果
