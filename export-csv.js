@@ -3,7 +3,7 @@
  *
  * Author:   Torstein Honsi
  * Licence:  MIT
- * Version:  1.3.8
+ * Version:  1.4.8
  */
 /*global Highcharts, window, document, Blob */
 (function (factory) {
@@ -18,6 +18,7 @@
 
     var each = Highcharts.each,
         pick = Highcharts.pick,
+        seriesTypes = Highcharts.seriesTypes,
         downloadAttrSupported = document.createElement('a').download !== undefined;
 
     Highcharts.setOptions({
@@ -29,7 +30,8 @@
             downloadPNG: '下载 PNG&nbsp; 文件',
             downloadSVG: '下载 SVG&nbsp; 文件',
             downloadCSV: '下载 CSV&nbsp; 文件',
-            downloadXLS: '下载 XLS&nbsp;&nbsp; 文件'
+            downloadXLS: '下载 XLS&nbsp;&nbsp; 文件',
+            viewData: '查看数据表格'
         },
         exporting: {
             // reset the default export server, to fixed Chinese filename
@@ -48,29 +50,41 @@
      */
     Highcharts.Chart.prototype.getDataRows = function () {
         var options = (this.options.exporting || {}).csv || {},
-            xAxis = this.xAxis[0],
+            xAxis,
+            xAxes = this.xAxis,
             rows = {},
             rowArr = [],
             dataRows,
             names = [],
             i,
             x,
-            xTitle = xAxis.options.title && xAxis.options.title.text,
-
+            xTitle,
             // Options
             dateFormat = options.dateFormat || '%Y-%m-%d %H:%M:%S',
-            columnHeaderFormatter = options.columnHeaderFormatter || function (series, key, keyLength) {
-                return series.name + (keyLength > 1 ? ' ('+ key + ')' : '');
-            };
+            columnHeaderFormatter = options.columnHeaderFormatter || function (item, key, keyLength) {
+                if (item instanceof Highcharts.Axis) {
+                    return (item.options.title && item.options.title.text) ||
+                        (item.isDatetimeAxis ? '时间' : '分类');
+                }
+                return item ? 
+                    item.name + (keyLength > 1 ? ' ('+ key + ')' : '') :
+                    '分类';
+            },
+            xAxisIndices = [];
 
         // Loop the series and index values
         i = 0;
         each(this.series, function (series) {
+            // ignore Navigator series
+            if(series.name.indexOf('Navigator') !== -1) {
+                return;
+            }
             var keys = series.options.keys,
                 pointArrayMap = keys || series.pointArrayMap || ['y'],
                 valueCount = pointArrayMap.length,
                 requireSorting = series.requireSorting,
                 categoryMap = {},
+                xAxisIndex = Highcharts.inArray(series.xAxis, xAxes),
                 j;
 
             // Map the categories for value axes
@@ -79,6 +93,17 @@
             });
 
             if (series.options.includeInCSVExport !== false && series.visible !== false) { // #55
+
+                // Build a lookup for X axis index and the position of the first
+                // series that belongs to that X axis. Includes -1 for non-axis
+                // series types like pies.
+                if (!Highcharts.find(xAxisIndices, function (index) {
+                    return index[0] === xAxisIndex;
+                })) {
+                    xAxisIndices.push([xAxisIndex, i]);
+                }
+
+                // Add the column headers, usually the same as series names
                 j = 0;
                 while (j < valueCount) {
                     names.push(columnHeaderFormatter(series, pointArrayMap[j], pointArrayMap.length));
@@ -93,12 +118,16 @@
                     j = 0;
 
                     if (!rows[key]) {
+                        // Generate the row
                         rows[key] = [];
+                        // Contain the X values from one or more X axes
+                        rows[key].xValues = [];
                     }
                     rows[key].x = point.x;
-
-                    // Pies, funnels etc. use point name in X row
-                    if (!series.xAxis) {
+                    rows[key].xValues[xAxisIndex] = point.x;
+                    
+                    // Pies, funnels, geo maps etc. use point name in X row
+                    if (!series.xAxis || series.exportKey === 'name') {
                         rows[key].name = point.name;
                     }
 
@@ -120,35 +149,52 @@
                 rowArr.push(rows[x]);
             }
         }
-        // Sort it by X values
-        rowArr.sort(function (a, b) {
-            return a.x - b.x;
-        });
 
-        // Add header row
-        if (!xTitle) {
-            xTitle = xAxis.isDatetimeAxis ? '时间' : '分类';
-        }
-        dataRows = [[xTitle].concat(names)];
+        var binding, xAxisIndex, column;
+        dataRows = [names];
 
-        // Transform the rows to CSV
-        each(rowArr, function (row) {
+        i = xAxisIndices.length;
+        while (i--) { // Start from end to splice in
+            xAxisIndex = xAxisIndices[i][0];
+            column = xAxisIndices[i][1];
+            xAxis = xAxes[xAxisIndex];
 
-            var category = row.name;
-            if (!category) {
-                if (xAxis.isDatetimeAxis) {
-                    category = Highcharts.dateFormat(dateFormat, row.x);
-                } else if (xAxis.categories) {
-                    category = pick(xAxis.names[row.x], xAxis.categories[row.x], row.x)
-                } else {
-                    category = row.x;
+            // Sort it by X values
+            rowArr.sort(function (a, b) {
+                return a.xValues[xAxisIndex] - b.xValues[xAxisIndex];
+            });
+
+            // Add header row
+            xTitle = columnHeaderFormatter(xAxis);
+            //dataRows = [[xTitle].concat(names)];
+            dataRows[0].splice(column, 0, xTitle);
+
+            // Add the category column
+            each(rowArr, function (row) {
+
+                var category = row.name;
+                if (!category) {
+                    if (xAxis.isDatetimeAxis) {
+                        if (row.x instanceof Date) {
+                            row.x = row.x.getTime();
+                        }
+                        category = Highcharts.dateFormat(dateFormat, row.x);
+                    } else if (xAxis.categories) {
+                        category = pick(
+                            xAxis.names[row.x],
+                            xAxis.categories[row.x],
+                            row.x
+                        )
+                    } else {
+                        category = row.x;
+                    }
                 }
-            }
 
-            // Add the X/date/category
-            row.unshift(category);
-            dataRows.push(row);
-        });
+                // Add the X/date/category
+                row.splice(column, 0, category);
+            });
+        }
+        dataRows = dataRows.concat(rowArr);
 
         return dataRows;
     };
@@ -188,7 +234,6 @@
                 csv += lineDelimiter;
             }
         });
-
         return csv;
     };
 
@@ -196,7 +241,7 @@
      * Build a HTML table with the data
      */
     Highcharts.Chart.prototype.getTable = function (useLocalDecimalPoint) {
-        var html = '<table>',
+        var html = '<table><thead>',
             rows = this.getDataRows();
 
         // Transform the rows to HTML
@@ -223,21 +268,24 @@
             }
 
             html += '</tr>';
+
+            // After the first row, end head and start body
+            if (!i) {
+                html += '</thead><tbody>';
+            }
+            
         });
-        html += '</table>';
+        html += '</tbody></table>';
+
         return html;
     };
 
     function getContent(chart, href, extension, content, MIME) {
-        console.log(href);
-        console.log(content);
-        console.log(MIME);
         var a,
             blobObject,
             name,
             options = (chart.options.exporting || {}).csv || {},
-            // change export csv server url to fixed Chinese char
-            url = options.url || 'http://export.hcharts.cn/csv.php';
+            url = options.url || 'http://www.highcharts.com/studies/csv-export/download.php';
 
         if (chart.options.exporting.filename) {
             name = chart.options.exporting.filename;
@@ -257,9 +305,8 @@
         } else if (downloadAttrSupported) {
             a = document.createElement('a');
             a.href = href;
-            a.target = '_blank';
             a.download = name + '.' + extension;
-            document.body.appendChild(a);
+            chart.container.append(a); // #111
             a.click();
             a.remove();
 
@@ -280,9 +327,7 @@
         var csv = this.getCSV(true);
         getContent(
             this,
-            // add \ufeff to Fixed Chinese in csv file
-            // http://www.honger05.com/html5/2015-04-01-html5-download/
-            'data:text/csv,\ufeff' + csv.replace(/\n/g, '%0A'),
+            'data:text/csv,\uFEFF' + encodeURIComponent(csv),
             'csv',
             csv,
             'text/csv'
@@ -295,17 +340,16 @@
     Highcharts.Chart.prototype.downloadXLS = function () {
         var uri = 'data:application/vnd.ms-excel;base64,',
             template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">' +
-                // add charset meta to fixed Chinese char in XLS file
-                '<meta http-equiv="Content-Type" charset=utf-8">'+
                 '<head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>' +
                 '<x:Name>Ark1</x:Name>' +
                 '<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->' +
                 '<style>td{border:none;font-family: Calibri, sans-serif;} .number{mso-number-format:"0.00";}</style>' +
                 '<meta name=ProgId content=Excel.Sheet>' +
+                '<meta charset=UTF-8>' +
                 '</head><body>' +
                 this.getTable(true) +
                 '</body></html>',
-            base64 = function (s) {
+            base64 = function (s) { 
                 return window.btoa(unescape(encodeURIComponent(s))); // #50
             };
         getContent(
@@ -315,6 +359,24 @@
             template,
             'application/vnd.ms-excel'
         );
+    };
+
+    /**
+     * View the data in a table below the chart
+     */
+    Highcharts.Chart.prototype.viewData = function () {
+        if (!this.dataTableDiv) {
+            this.dataTableDiv = document.createElement('div');
+            this.dataTableDiv.className = 'highcharts-data-table';
+            
+            // Insert after the chart container
+            this.renderTo.parentNode.insertBefore(
+                this.dataTableDiv,
+                this.renderTo.nextSibling
+            );
+        }
+
+        this.dataTableDiv.innerHTML = this.getTable();
     };
 
 
@@ -328,7 +390,21 @@
         }, {
             textKey: 'downloadXLS',
             onclick: function () { this.downloadXLS(); }
+        }, {
+            textKey: 'viewData',
+            onclick: function () { this.viewData(); }
         });
+    }
+
+    // Series specific
+    if (seriesTypes.map) {
+        seriesTypes.map.prototype.exportKey = 'name';
+    }
+    if (seriesTypes.mapbubble) {
+        seriesTypes.mapbubble.prototype.exportKey = 'name';
+    }
+    if (seriesTypes.treemap) {
+        seriesTypes.treemap.prototype.exportKey = 'name';
     }
 
 });

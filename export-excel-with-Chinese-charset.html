@@ -5,71 +5,77 @@
     <meta charset="UTF-8">
     <title>Document</title>
     <style type="text/css">
-        .container  {
-          width: 1000px;
-          margin: 0 auto;
-        }
-        .demo {
-            width: 1000px;
-            border: 1px solid #aaa;
-            margin: 20px 0;
-        }
+    .container {
+        width: 1000px;
+        margin: 0 auto;
+    }
 
-        .chart {
-            width: 70%;
-            float: left;
-        }
+    .demo {
+        width: 1000px;
+        border: 1px solid #aaa;
+        margin: 20px 0;
+    }
 
-        .data-preview {
-            width: 25%;
-            float: right;
-            padding-top: 40px;
+    .chart {
+        width: 70%;
+        float: left;
+    }
 
-        }
+    .data-preview {
+        width: 25%;
+        float: right;
+        padding-top: 40px;
+    }
 
-        .clear {
-            clear: both;
-        }
+    .clear {
+        clear: both;
+    }
     </style>
 </head>
 
 <body>
     <div class="container">
-    <h1>Highcharts 导出 Excel 插件 —— 修复中文乱码问题</h1>
-    <p>
-      export-csv 插件是将 Highcharts 图表数据导出为 Excel 文件（包含 CSV 及 XLS 文件），
-      官方提供的插件对中文支持不好，导出内容包含中文的话会产生乱码，这里是修复版本。
-    </p>
-    <h3>Github 地址：<a href="https://github.com/hcharts/export-csv">https://github.com/hcharts/export-csv</a></h3>
-    <h3>社区交流：<a href="http://bbs.hcharts.cn/thread-1174-1-1.html">http://bbs.hcharts.cn/thread-1174-1-1.html</a></a></h3>
-    <p>
-      下面是测试例子，主要修复如下问题：
-    </p>
-    <ul>
-      <li>下载 CSV 文件包含中文乱码</li>
-      <li>下载 XLC 文件包含中文乱码</li>
-      <li>下载的文件名为中文时乱码</li>
-    </ul>
-    <div class="demo">
-        <div id="container" class="chart"></div>
-        <div class="data-preview">
-            <h3>CSV 数据预览：</h3>
-            <pre id="container-preview"></pre>
+        <h1>Highcharts 导出 Excel 插件 —— 修复中文乱码问题</h1>
+        <p>
+            export-csv 插件是将 Highcharts 图表数据导出为 Excel 文件（包含 CSV 及 XLS 文件）， 官方提供的插件对中文支持不好，导出内容包含中文的话会产生乱码，这里是修复版本。
+        </p>
+        <h3>Github 地址：<a href="https://github.com/hcharts/export-csv">https://github.com/hcharts/export-csv</a></h3>
+        <h3>社区交流：<a href="http://bbs.hcharts.cn/thread-1174-1-1.html">http://bbs.hcharts.cn/thread-1174-1-1.html</a></a></h3>
+        <p>
+            下面是测试例子，主要修复如下问题：
+        </p>
+        <ul>
+            <li>下载 CSV 文件包含中文乱码</li>
+            <li>下载 XLC 文件包含中文乱码</li>
+            <li>下载的文件名为中文时乱码</li>
+        </ul>
+        <div class="demo">
+            <div id="container" class="chart"></div>
+            <div class="data-preview">
+                <h3>CSV 数据预览：</h3>
+                <pre id="container-preview"></pre>
+            </div>
+            <div class="clear"></div>
         </div>
-        <div class="clear"></div>
-    </div>
-
-    <div class="demo">
-        <div id="container2" class="chart"></div>
-        <div class="data-preview">
-            <h3>CSV 数据预览：</h3>
-            <pre id="container-preview2"></pre>
+        <div class="demo">
+            <div id="container2" class="chart"></div>
+            <div class="data-preview">
+                <h3>CSV 数据预览：</h3>
+                <pre id="container-preview2"></pre>
+            </div>
+            <div class="clear"></div>
         </div>
-        <div class="clear"></div>
-    </div>
+        <div class="demo">
+            <div id="container3" class="chart"></div>
+            <div class="data-preview">
+                <h3>CSV 数据预览：</h3>
+                <pre id="container-preview3"></pre>
+            </div>
+            <div class="clear"></div>
+        </div>
     </div>
     <script src="http://cdn.hcharts.cn/jquery/jquery-1.8.3.min.js"></script>
-    <script src="http://cdn.hcharts.cn/highcharts/highcharts.js"></script>
+    <script src="http://cdn.hcharts.cn/highstock/highstock.js"></script>
     <script src="http://cdn.hcharts.cn/highcharts/modules/exporting.js"></script>
     <script src="export-csv.js"></script>
     <script>
@@ -89,8 +95,8 @@
             }
         },
         credits: {
-          text: 'Highcharts中文网',
-          url: 'http://www.hcharts.cn'
+            text: 'Highcharts中文网',
+            url: 'http://www.hcharts.cn'
         }
 
     });
@@ -125,7 +131,10 @@
     $('#container2').highcharts({
 
         exporting: {
-            filename: '数据'
+            filename: '数据',
+            csv: {
+                dateFormat: '%Y-%m-%d'
+            }
         },
         title: {
             text: '导出 Excel 中文编码测试 2 - 时间数据'
@@ -144,7 +153,7 @@
             dateTimeLabelFormats: {
                 day: '%Y-%m-%d'
             }
-        }  ,
+        },
 
         series: [{
             name: '测试数据',
@@ -156,6 +165,31 @@
         $('#container-preview2').html(c.getCSV());
     });
 
+    $.getJSON('https://data.jianshukeji.com/jsonp?filename=json/aapl-c.json&callback=?', function(data) {
+        console.log($('#container3'))
+        $('#container3').highcharts('StockChart', {
+            rangeSelector: {
+                selected: 1
+            },
+            exporting: {
+                csv: {
+                    dateFormat: '%Y-%m-%d'
+                }
+            },
+            title: {
+                text: '苹果历史股价（股票代码：AAPL）'
+            },
+            series: [{
+                name: 'AAPL',
+                data: data,
+                tooltip: {
+                    valueDecimals: 2
+                }
+            }]
+        }, function(c) {
+            $('#container-preview3').html(c.getCSV());
+        });
+    });
     </script>
 </body>
 
