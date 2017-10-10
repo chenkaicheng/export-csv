@@ -35,7 +35,7 @@
         },
         exporting: {
             // reset the default export server, to fixed Chinese filename
-            url: 'http://export.hcharts.cn/index.php',
+            url: 'http://export.highcharts.com.cn',
             buttons: {
                 contextButton: {
 
